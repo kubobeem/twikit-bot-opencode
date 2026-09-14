@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "x-bot"
+version = "0.1.0"
+description = "Persona-driven casual chat bot for X (Twitter): twikit (twifork) writes with Playwright real-browser fallback"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+dependencies = [
+    "twifork[impersonate]>=2.4.0",
+    "playwright>=1.40",
+    "urllib3",
+]
+
+[project.scripts]
+xbot = "xbot.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["xbot*"]
