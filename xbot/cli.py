@@ -15,8 +15,23 @@ from pathlib import Path
 
 from .client import BotAuthError, XBot
 
+
+def _load_dotenv(path: str = ".env"):
+    """Minimal KEY=VALUE parser; never overrides an existing env var."""
+    if not Path(path).exists():
+        return
+    for line in Path(path).read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if line and not line.startswith("#") and "=" in line:
+            k, v = line.split("=", 1)
+            os.environ.setdefault(k.strip(), v.strip())
+
+
+_load_dotenv()
+
 DEFAULT_COOKIES = os.environ.get("XBOT_COOKIES", "cookies.json")
 DEFAULT_ME = os.environ.get("XBOT_SCREEN_NAME", "")
+DEFAULT_WATCH = os.environ.get("XBOT_WATCH", "qa_a_aa")
 
 
 def _enc():

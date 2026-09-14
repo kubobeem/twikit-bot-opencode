@@ -29,6 +29,9 @@ xbot login --cookies cookies.json
 環境変数:
 - `XBOT_COOKIES` — cookies.json の場所 (既定 `cookies.json`)
 - `XBOT_SCREEN_NAME` — 自分の screen_name (`check`/`mentions` が使う。例 `Japanese_gguf`)
+- `XBOT_WATCH` — いいね監視対象 (既定 `qa_a_aa`)
+
+リポジトリ直下の `.env`(KEY=VALUE 形式)は自動で読まれる。実値のサンプルに差し替えて使ってよい。
 
 ## 使い方
 
