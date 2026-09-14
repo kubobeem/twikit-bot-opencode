@@ -155,6 +155,21 @@ async def cmd_act(args):
             await asyncio.sleep(int(a.get("sleep", args.gap)))
 
 
+async def cmd_export(args):
+    out = Path(args.out)
+    with _bot(args) as b:
+        rows = []
+        for t in await b.t.user_tweets(args.me, "Tweets", count=args.count):
+            rows.append({
+                "id": t.id,
+                "ts": int(t.created_at_datetime.timestamp()) if t.created_at_datetime else None,
+                "text": t.text or "",
+            })
+        out.write_text(json.dumps({"screen_name": args.me, "tweets": rows},
+                                  ensure_ascii=False, indent=1), encoding="utf-8")
+        print(f"EXPORT_OK {len(rows)} tweets -> {out}")
+
+
 def main() -> None:
     _enc()
     if sys.platform == "win32":
@@ -187,6 +202,9 @@ def main() -> None:
     pf = sub.add_parser("follow", help="follow a user"); pf.add_argument("screen")
     pa = sub.add_parser("act", help="run an actions JSON file")
     pa.add_argument("file"); pa.add_argument("--gap", type=int, default=30)
+    pe = sub.add_parser("export", help="dump your own tweets to posts.json")
+    pe.add_argument("--count", type=int, default=100)
+    pe.add_argument("--out", default="posts.json")
 
     args = p.parse_args()
     if args.cmd == "login":

@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<title>@Japanese_gguf の投稿</title>
+<style>
+  :root {
+    --bg: #0f1014; --card: #17181d; --border: #23252d;
+    --text: #e7e9ee; --muted: #8b8fa0; --accent: #4f8cff;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", Meiryo, sans-serif;
+    line-height: 1.6;
+  }
+  header {
+    position: sticky; top: 0; z-index: 10;
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 20px; background: rgba(15,16,20,.92); border-bottom: 1px solid var(--border);
+  }
+  header h1 { margin: 0; font-size: 18px; }
+  header .sub { color: var(--muted); font-size: 12px; }
+  header button {
+    margin-left: auto; background: var(--accent); color: #fff; border: 0;
+    padding: 6px 14px; border-radius: 999px; cursor: pointer; font-size: 13px;
+  }
+  main { max-width: 620px; margin: 0 auto; padding: 16px 12px 60px; }
+  .card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+    padding: 14px 16px; margin-bottom: 14px;
+  }
+  .card .head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .card .avatar { width: 40px; height: 40px; border-radius: 50%; background: #222; object-fit: cover; }
+  .card .name { font-weight: 700; }
+  .card .handle { color: var(--muted); font-size: 13px; }
+  .card .time { margin-left: auto; color: var(--muted); font-size: 12px; white-space: nowrap; }
+  .card .chip {
+    display: inline-block; font-size: 11px; color: var(--muted);
+    border: 1px solid var(--border); border-radius: 999px; padding: 1px 8px; margin-left: 6px;
+  }
+  .card .body { white-space: pre-wrap; word-break: break-word; }
+  .card .body a { color: var(--accent); text-decoration: none; }
+  .card .body a:hover { text-decoration: underline; }
+  .reply { color: var(--muted); font-size: 13px; margin-bottom: 4px; }
+  .reply a { color: var(--muted); text-decoration: none; }
+  .reply a:hover { color: var(--accent); text-decoration: underline; }
+  .media { margin-top: 10px; border-radius: 12px; overflow: hidden; }
+  .media img { display: block; width: 100%; max-height: 420px; object-fit: contain; background: #000; }
+  .media a { display: block; position: relative; }
+  .media .play {
+    position: absolute; inset: 0; margin: auto; width: 56px; height: 56px;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(0,0,0,.55); color: #fff; font-size: 22px;
+    border-radius: 50%; pointer-events: none;
+  }
+  .card .foot {
+    display: flex; gap: 16px; margin-top: 10px; color: var(--muted); font-size: 13px;
+  }
+  .card .foot a { color: var(--muted); text-decoration: none; }
+  .card .foot a:hover { color: var(--accent); }
+  #status { text-align: center; color: var(--muted); font-size: 13px; padding: 20px; }
+  .loader { display: none; text-align: center; padding: 18px; }
+  .loader.on { display: block; }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>@<span id="screen">Japanese_gguf</span> の投稿</h1>
+    <div class="sub">実投稿を fxTwitter API で新着順・無限表示</div>
+  </div>
+  <button id="refresh">最新を再読み込み</button>
+</header>
+<main id="feed"></main>
+<div class="loader" id="loader">読み込み中…</div>
+<div id="status"></div>
+
+<script>
+const USER = document.getElementById("screen").textContent;
+const API = "https://api.fxtwitter.com/2/profile/" + USER + "/statuses";
+const PAGE = 20;
+const state = { cursor: null, loading: false, ended: false, newestTs: 0, seen: new Set() };
+
+function apiUrl(cursor, since) {
+  const u = new URL(API);
+  u.searchParams.set("count", PAGE);
+  u.searchParams.set("with_replies", "1");
+  if (cursor) u.searchParams.set("cursor", cursor);
+  if (since) u.searchParams.set("since", since);
+  return u;
+}
+
+async function page(cursor, since) {
+  const r = await fetch(apiUrl(cursor, since));
+  if (r.status === 204) return { statuses: [], isNew: true };
+  if (!r.ok) throw new Error("HTTP " + r.status);
+  return r.json();
+}
+
+function rel(ts) {
+  const diff = Math.round(Date.now() / 1000) - ts;
+  if (diff < 0) return "たった今";
+  if (diff < 60) return diff + "秒前";
+  if (diff < 3600) return Math.floor(diff / 60) + "分前";
+  if (diff < 86400) return Math.floor(diff / 3600) + "時間前";
+  if (diff < 172800) return "昨日";
+  if (diff < 604800) return Math.floor(diff / 86400) + "日前";
+  if (diff < 2592000) return Math.floor(diff / 604800) + "週間前";
+  if (diff < 31536000) return Math.floor(diff / 2592000) + "ヶ月前";
+  return Math.floor(diff / 31536000) + "年前";
+}
+
+function esc(s) {
+  const d = document.createElement("div");
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function linkify(text) {
+  return esc(text)
+    .replace(/(https?:\/\/[^\s<>()]+[^\s<>()））、。,.])/g, '<a href="$1" target="_blank" rel="noopener">$1</a>')
+    .replace(/@([A-Za-z0-9_]{1,15})/g, '<a href="https://x.com/$1" target="_blank" rel="noopener">@$1</a>')
+    .replace(/#([^\s#（）（）]+[^\s#])/g, '<a href="https://x.com/hashtag/$1" target="_blank" rel="noopener">#$1</a>');
+}
+
+function mediaHtml(media, url) {
+  const all = (media && media.all) || [];
+  if (!all.length) return "";
+  return '<div class="media">' + all.map(m => {
+    if (m.type === "photo") return '<img loading="lazy" src="' + m.url + '">';
+    if (m.type === "video" || m.type === "gif")
+      return '<a href="' + esc(url) + '" target="_blank" rel="noopener"><img loading="lazy" src="' + m.thumbnail_url + '" alt=""><div class="play">▶</div></a>';
+    return "";
+  }).join("") + "</div>";
+}
+
+function makeCard(s) {
+  const a = s.author || {};
+  const el = document.createElement("article");
+  el.className = "card";
+  el.innerHTML =
+    '<div class="head"><img class="avatar" alt="" src="' + (a.avatar_url || "") + '">' +
+    '<div><div class="name">' + esc(a.name || a.screen_name || USER) + "</div>" +
+    '<div class="handle">@' + esc(a.screen_name || USER) +
+    (s.reposted_by ? '<span class="chip">RT @' + esc(s.reposted_by.screen_name) + "</span>" : "") +
+    "</div></div>" +
+    '<div class="time" title="' + s.created_at + '">' + rel(s.created_timestamp) + "</div></div>" +
+    (s.replying_to
+      ? '<div class="reply">返信先: <a href="' + esc(s.replying_to.url) + '" target="_blank" rel="noopener">@' + esc(s.replying_to.screen_name) + "</a></div>"
+      : "") +
+    '<div class="body">' + linkify(s.text || (s.raw_text && s.raw_text.text) || "") + "</div>" +
+    mediaHtml(s.media, s.url) +
+    '<div class="foot">' +
+    '<a href="' + esc(s.url) + '" target="_blank" rel="noopener">X で見る ↗</a>' +
+    "<span>💬 " + (s.replies ?? 0) + " ♻ " + (s.reposts ?? 0) + " ♥ " + (s.likes ?? 0) +
+    (s.views ? " 👁 " + s.views : "") + "</span></div>";
+  return el;
+}
+
+function merge(items, prepend) {
+  const fresh = [];
+  for (const s of items) {
+    if (state.seen.has(s.id)) continue;
+    state.seen.add(s.id);
+    if (s.created_timestamp > state.newestTs) state.newestTs = s.created_timestamp;
+    fresh.push(s);
+  }
+  const feed = document.getElementById("feed");
+  const nodes = fresh.map(makeCard);
+  if (prepend) feed.prepend(...nodes);
+  else feed.append(...nodes);
+}
+
+async function loadMore(initial) {
+  if (state.loading || state.ended) return;
+  state.loading = true;
+  document.getElementById("loader").classList.add("on");
+  try {
+    const d = await page(state.cursor);
+    const items = d.results || [];
+    state.cursor = items.length ? (d.cursor && d.cursor.bottom) || null : null;
+    if (!items.length || !state.cursor) state.ended = true;
+    merge(items, false);
+  } catch (e) {
+    setStatus("読み込みに失敗しました (" + e.message + ")");
+  } finally {
+    state.loading = false;
+    document.getElementById("loader").classList.remove("on");
+  }
+  if (initial && !state.cursor) setStatus("ここまで");
+}
+
+async function refreshNew() {
+  const btn = document.getElementById("refresh");
+  btn.disabled = true;
+  try {
+    const d = await page(null, state.newestTs + 1);
+    if (!d) { setStatus("新しい投稿はありません"); return; }
+    const items = (d.results || []).filter(s => s.created_timestamp > state.newestTs);
+    if (items.length) { merge(items, true); setStatus(items.length + " 件の新着を表示"); }
+    else setStatus("新しい投稿はありません");
+  } catch (e) {
+    setStatus("再読み込みに失敗しました (" + e.message + ")");
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function setStatus(t) {
+  document.getElementById("status").textContent = t;
+  if (t) setTimeout(() => { if (document.getElementById("status").textContent === t) setStatus(""); }, 4000);
+}
+
+const sentinel = document.createElement("div");
+sentinel.id = "sentinel";
+document.getElementById("feed").after(sentinel);
+new IntersectionObserver(entries => {
+  if (entries.some(e => e.isIntersecting)) loadMore(false);
+}, { rootMargin: "400px" }).observe(sentinel);
+
+document.getElementById("refresh").addEventListener("click", refreshNew);
+
+loadMore(true);
+</script>
+</body>
+</html>
