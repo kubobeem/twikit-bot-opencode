@@ -24,6 +24,8 @@ xbot login --cookies cookies.json
 
 非ヘッドレス Chromium が開き X のログイン画面が出る。**手動でログインしたら**ターミナルで Enter → `auth_token` / `ct0` が保存される。クッキーは SSH 鍵並みの秘密。**git に絶対コミットしない**。
 
+形式の参考: `cookies.example.json`(twikit 用クッキー)、`secrets.example.json`(画面名/パスワード)。実ファイル `cookies.json` / `secrets.json` は本ツールでは両方とも未使用で可(認証はブラウザクッキーのみ)。`.gitignore` で両者を除外済み。
+
 環境変数:
 - `XBOT_COOKIES` — cookies.json の場所 (既定 `cookies.json`)
 - `XBOT_SCREEN_NAME` — 自分の screen_name (`check`/`mentions` が使う。例 `Japanese_gguf`)
