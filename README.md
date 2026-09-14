@@ -1,6 +1,6 @@
 # x-bot
 
-> English: [README-english.md](README-english.md)
+# English: [README-english.md](README-english.md)
 
 X (Twitter) で「1 つの人格の雑談 bot」を動かす CLI。書き込みは **twikit(twifork, curl_cffi impersonation)** で行い、**226 / 403 (自動化判定) が出たら Playwright の実ブラウザ UI に自動フォールバック**する。
 
