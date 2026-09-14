@@ -30,25 +30,28 @@
   main { max-width: 620px; margin: 0 auto; padding: 16px 12px 60px; }
   .card {
     background: var(--card); border: 1px solid var(--border); border-radius: 14px;
-    padding: 14px 16px; margin-bottom: 14px;
+    padding: 12px 14px; margin-bottom: 12px;
   }
-  .card .head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
-  .card .avatar { width: 40px; height: 40px; border-radius: 50%; background: #222; object-fit: cover; }
-  .card .name { font-weight: 700; }
-  .card .handle { color: var(--muted); font-size: 13px; }
-  .card .time { margin-left: auto; color: var(--muted); font-size: 12px; white-space: nowrap; }
+  .card .head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .card .avatar { width: 30px; height: 30px; border-radius: 50%; background: #222; object-fit: cover; }
+  .card .name { font-weight: 700; font-size: 14px; }
+  .card .handle { color: var(--muted); font-size: 12px; }
+  .card .time { margin-left: auto; color: var(--muted); font-size: 11px; white-space: nowrap; }
   .card .chip {
     display: inline-block; font-size: 11px; color: var(--muted);
     border: 1px solid var(--border); border-radius: 999px; padding: 1px 8px; margin-left: 6px;
   }
-  .card .body { white-space: pre-wrap; word-break: break-word; }
-  .card .body a { color: var(--accent); text-decoration: none; }
-  .card .body a:hover { text-decoration: underline; }
+  .card .body { white-space: pre-wrap; word-break: break-word; font-size: 15px; line-height: 1.75; }
+  .card .body a {
+    color: #8db4ff; text-decoration: underline;
+    text-decoration-thickness: 1px; text-underline-offset: 3px;
+  }
+  .card .body a:hover { color: var(--accent); }
   .reply { color: var(--muted); font-size: 13px; margin-bottom: 4px; }
   .reply a { color: var(--muted); text-decoration: none; }
   .reply a:hover { color: var(--accent); text-decoration: underline; }
-  .media { margin-top: 10px; border-radius: 12px; overflow: hidden; }
-  .media img { display: block; width: 100%; max-height: 420px; object-fit: contain; background: #000; }
+  .media { margin-top: 8px; border-radius: 10px; overflow: hidden; }
+  .media img { display: block; width: 100%; max-height: 320px; object-fit: contain; background: #000; }
   .media a { display: block; position: relative; }
   .media .play {
     position: absolute; inset: 0; margin: auto; width: 56px; height: 56px;
@@ -153,10 +156,7 @@ function makeCard(s) {
       : "") +
     '<div class="body">' + linkify(s.text || (s.raw_text && s.raw_text.text) || "") + "</div>" +
     mediaHtml(s.media, s.url) +
-    '<div class="foot">' +
-    '<a href="' + esc(s.url) + '" target="_blank" rel="noopener">X で見る ↗</a>' +
-    "<span>💬 " + (s.replies ?? 0) + " ♻ " + (s.reposts ?? 0) + " ♥ " + (s.likes ?? 0) +
-    (s.views ? " 👁 " + s.views : "") + "</span></div>";
+    '<div class="foot"><a href="' + esc(s.url) + '" target="_blank" rel="noopener">X で見る ↗</a></div>';
   return el;
 }
 
